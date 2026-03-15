@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#86d7ff" />
+  <title>테마 블록 놀이터</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="app">
+    <header class="header card">
+      <div>
+        <h1 id="gameTitle">🍬 캔디 블록 놀이터</h1>
+        <p id="gameSubtitle">블록을 맞춰서 줄을 지워보자!</p>
+      </div>
+      <button id="restartButton" class="primary-button">다시 시작</button>
+    </header>
+
+    <section class="card theme-card">
+      <div class="theme-row">
+        <div>
+          <h2>테마 고르기</h2>
+          <p class="theme-help">좋아하는 그림 분위기를 골라보자!</p>
+        </div>
+        <select id="themeSelect" class="theme-select" aria-label="테마 선택">
+          <option value="candy">캔디</option>
+          <option value="fruit">과일</option>
+          <option value="ocean">바다친구</option>
+        </select>
+      </div>
+    </section>
+
+    <section class="layout">
+      <div class="board-panel card">
+        <canvas id="gameCanvas" width="300" height="600" aria-label="게임 보드"></canvas>
+      </div>
+
+      <aside class="side-panel">
+        <section class="card info-card">
+          <h2>점수판</h2>
+          <div class="stat-list">
+            <div class="stat-box">
+              <span class="label">점수</span>
+              <strong id="scoreValue">0</strong>
+            </div>
+            <div class="stat-box">
+              <span class="label">레벨</span>
+              <strong id="levelValue">1</strong>
+            </div>
+            <div class="stat-box">
+              <span class="label">줄</span>
+              <strong id="linesValue">0</strong>
+            </div>
+          </div>
+        </section>
+
+        <section class="card preview-card">
+          <h2>다음 블록</h2>
+          <canvas id="nextCanvas" width="120" height="120" aria-label="다음 블록"></canvas>
+        </section>
+
+        <section class="card help-card">
+          <h2>놀이 방법</h2>
+          <ul>
+            <li>← → : 옆으로 이동</li>
+            <li>↑ : 돌리기</li>
+            <li>↓ : 천천히 내리기</li>
+            <li>Space : 바로 내리기</li>
+            <li>화면을 톡 누르면 돌리기</li>
+          </ul>
+        </section>
+      </aside>
+    </section>
+
+    <section class="card controls-card">
+      <h2>터치 버튼</h2>
+      <div class="controls-layout">
+        <div class="pad">
+          <button id="rotateButton" class="control-button">🔄</button>
+          <div class="move-row">
+            <button id="leftButton" class="control-button">⬅️</button>
+            <button id="downButton" class="control-button">⬇️</button>
+            <button id="rightButton" class="control-button">➡️</button>
+          </div>
+        </div>
+        <div class="action-buttons">
+          <button id="dropButton" class="control-button big">✨ 바로 내리기</button>
+          <button id="pauseButton" class="control-button big secondary">⏸ 잠깐 멈추기</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="game.js"></script>
+</body>
+</html>
