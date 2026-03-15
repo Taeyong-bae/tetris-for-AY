@@ -1,12 +1,18 @@
 const CONFIG = {
   cols: 10,
   rows: 20,
-  blockSize: 30,
-  startDropInterval: 950,
-  minDropInterval: 220,
-  levelSpeedStep: 70,
-  swipeStep: 24,
-  hardDropDistance: 130,
+  blockSize: 36,
+  baseDropIntervals: {
+    1: 1300,
+    2: 1100,
+    3: 900,
+    4: 700,
+    5: 520
+  },
+  minDropInterval: 180,
+  levelSpeedStep: 55,
+  swipeStep: 28,
+  hardDropDistance: 140,
   tapDistance: 12,
   tapTime: 220
 };
@@ -26,44 +32,28 @@ const THEMES = {
     bodyClass: "theme-candy",
     title: "🍬 캔디 블록 놀이터",
     subtitle: "달콤한 블록을 맞춰서 줄을 지워보자!",
-    pieceColors: {
-      I: "#7dd9ff",
-      O: "#ffe178",
-      T: "#d8a2ff",
-      S: "#89f0b5",
-      Z: "#ff9fb0",
-      J: "#8ab7ff",
-      L: "#ffbf84"
-    }
+    pieceColors: { I:"#7dd9ff", O:"#ffe178", T:"#d8a2ff", S:"#89f0b5", Z:"#ff9fb0", J:"#8ab7ff", L:"#ffbf84" }
   },
   fruit: {
     bodyClass: "theme-fruit",
     title: "🍓 과일 블록 놀이터",
     subtitle: "상큼한 과일 블록으로 줄을 맞춰보자!",
-    pieceColors: {
-      I: "#ff8ca1",
-      O: "#ffd86b",
-      T: "#bfa1ff",
-      S: "#83d86d",
-      Z: "#ff7c6b",
-      J: "#7fc6ff",
-      L: "#ffb15a"
-    }
+    pieceColors: { I:"#ff8ca1", O:"#ffd86b", T:"#bfa1ff", S:"#83d86d", Z:"#ff7c6b", J:"#7fc6ff", L:"#ffb15a" }
   },
   ocean: {
     bodyClass: "theme-ocean",
     title: "🐠 바다친구 블록 놀이터",
     subtitle: "바다친구 블록을 차곡차곡 쌓아보자!",
-    pieceColors: {
-      I: "#7de0f7",
-      O: "#ffe38a",
-      T: "#9fd3ff",
-      S: "#7fe0c0",
-      Z: "#ffa8c3",
-      J: "#7fb3ff",
-      L: "#ffca7a"
-    }
+    pieceColors: { I:"#7de0f7", O:"#ffe38a", T:"#9fd3ff", S:"#7fe0c0", Z:"#ffa8c3", J:"#7fb3ff", L:"#ffca7a" }
   }
+};
+
+const SPEED_LABELS = {
+  1: "아주 천천히",
+  2: "천천히",
+  3: "보통",
+  4: "빠르게",
+  5: "아주 빠르게"
 };
 
 class GameState {
@@ -78,7 +68,8 @@ class GameState {
     this.level = 1;
     this.paused = false;
     this.gameOver = false;
-    this.dropInterval = CONFIG.startDropInterval;
+    this.speedSetting = 3;
+    this.dropInterval = CONFIG.baseDropIntervals[this.speedSetting];
     this.dropCounter = 0;
     this.lastTime = 0;
     this.currentPiece = createRandomPiece();
@@ -114,7 +105,6 @@ function rotateMatrix(matrix) {
   const height = matrix.length;
   const width = matrix[0].length;
   const result = Array.from({ length: width }, () => Array(height).fill(0));
-
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
       result[x][height - 1 - y] = matrix[y][x];
@@ -127,17 +117,11 @@ function collides(board, piece) {
   for (let y = 0; y < piece.matrix.length; y++) {
     for (let x = 0; x < piece.matrix[y].length; x++) {
       if (!piece.matrix[y][x]) continue;
-
       const boardX = piece.x + x;
       const boardY = piece.y + y;
 
-      if (boardX < 0 || boardX >= CONFIG.cols || boardY >= CONFIG.rows) {
-        return true;
-      }
-
-      if (boardY >= 0 && board[boardY][boardX]) {
-        return true;
-      }
+      if (boardX < 0 || boardX >= CONFIG.cols || boardY >= CONFIG.rows) return true;
+      if (boardY >= 0 && board[boardY][boardX]) return true;
     }
   }
   return false;
@@ -147,17 +131,16 @@ function mergePiece(board, piece) {
   piece.matrix.forEach((row, y) => {
     row.forEach((value, x) => {
       if (!value) return;
-
       const targetY = piece.y + y;
       const targetX = piece.x + x;
-
-      if (targetY >= 0) {
-        board[targetY][targetX] = {
-          type: piece.type
-        };
-      }
+      if (targetY >= 0) board[targetY][targetX] = { type: piece.type };
     });
   });
+}
+
+function recomputeDropInterval(state) {
+  const base = CONFIG.baseDropIntervals[state.speedSetting];
+  state.dropInterval = Math.max(CONFIG.minDropInterval, base - (state.level - 1) * CONFIG.levelSpeedStep);
 }
 
 function clearCompleteLines(state) {
@@ -166,11 +149,8 @@ function clearCompleteLines(state) {
   outer:
   for (let y = CONFIG.rows - 1; y >= 0; y--) {
     for (let x = 0; x < CONFIG.cols; x++) {
-      if (!state.board[y][x]) {
-        continue outer;
-      }
+      if (!state.board[y][x]) continue outer;
     }
-
     state.board.splice(y, 1);
     state.board.unshift(Array(CONFIG.cols).fill(null));
     cleared++;
@@ -182,10 +162,7 @@ function clearCompleteLines(state) {
     state.score += (scoreTable[cleared] || 0) * state.level;
     state.lines += cleared;
     state.level = Math.floor(state.lines / 8) + 1;
-    state.dropInterval = Math.max(
-      CONFIG.minDropInterval,
-      CONFIG.startDropInterval - (state.level - 1) * CONFIG.levelSpeedStep
-    );
+    recomputeDropInterval(state);
   }
 }
 
@@ -206,6 +183,8 @@ class ThemeBlocksGame {
     this.titleEl = document.getElementById("gameTitle");
     this.subtitleEl = document.getElementById("gameSubtitle");
     this.themeSelect = document.getElementById("themeSelect");
+    this.speedSlider = document.getElementById("speedSlider");
+    this.speedLabel = document.getElementById("speedLabel");
 
     this.touch = {
       startX: 0,
@@ -216,9 +195,9 @@ class ThemeBlocksGame {
     };
 
     this.ctx.scale(CONFIG.blockSize, CONFIG.blockSize);
-
     this.applyTheme(this.themeKey);
     this.bindEvents();
+    this.applySpeedSetting(Number(this.speedSlider.value));
     this.updateHud();
     this.render();
     requestAnimationFrame(this.loop.bind(this));
@@ -240,6 +219,7 @@ class ThemeBlocksGame {
     document.getElementById("restartButton").addEventListener("click", () => this.restart());
     document.getElementById("pauseButton").addEventListener("click", () => this.togglePause());
     this.themeSelect.addEventListener("change", (event) => this.applyTheme(event.target.value));
+    this.speedSlider.addEventListener("input", (event) => this.applySpeedSetting(Number(event.target.value)));
 
     this.canvas.addEventListener("touchstart", (event) => this.handleTouchStart(event), { passive: true });
     this.canvas.addEventListener("touchmove", (event) => this.handleTouchMove(event), { passive: false });
@@ -249,16 +229,21 @@ class ThemeBlocksGame {
   applyTheme(themeKey) {
     this.themeKey = THEMES[themeKey] ? themeKey : "candy";
     const theme = this.currentTheme;
-
     document.body.classList.remove("theme-candy", "theme-fruit", "theme-ocean");
     document.body.classList.add(theme.bodyClass);
-
     this.titleEl.textContent = theme.title;
     this.subtitleEl.textContent = theme.subtitle;
     this.themeSelect.value = this.themeKey;
-
     this.updateHud();
     this.render();
+  }
+
+  applySpeedSetting(value) {
+    const speed = Math.min(5, Math.max(1, value));
+    this.state.speedSetting = speed;
+    recomputeDropInterval(this.state);
+    this.speedSlider.value = String(speed);
+    this.speedLabel.textContent = SPEED_LABELS[speed];
   }
 
   pieceColor(type) {
@@ -270,17 +255,12 @@ class ThemeBlocksGame {
     else if (event.key === "ArrowRight") this.movePiece(1);
     else if (event.key === "ArrowDown") this.softDrop();
     else if (event.key === "ArrowUp") this.rotatePiece();
-    else if (event.code === "Space") {
-      event.preventDefault();
-      this.hardDrop();
-    } else if (event.key.toLowerCase() === "p") {
-      this.togglePause();
-    }
+    else if (event.code === "Space") { event.preventDefault(); this.hardDrop(); }
+    else if (event.key.toLowerCase() === "p") this.togglePause();
   }
 
   handleTouchStart(event) {
     if (this.state.paused || this.state.gameOver) return;
-
     const touch = event.changedTouches[0];
     this.touch.startX = touch.clientX;
     this.touch.startY = touch.clientY;
@@ -291,12 +271,10 @@ class ThemeBlocksGame {
 
   handleTouchMove(event) {
     if (this.state.paused || this.state.gameOver) return;
-
     event.preventDefault();
     const touch = event.changedTouches[0];
     const dx = touch.clientX - this.touch.startX;
     const dy = touch.clientY - this.touch.startY;
-
     const horizontalStep = Math.trunc(dx / CONFIG.swipeStep);
     const verticalStep = Math.trunc(dy / CONFIG.swipeStep);
 
@@ -304,12 +282,10 @@ class ThemeBlocksGame {
       this.movePiece(1);
       this.touch.horizontalStep++;
     }
-
     while (horizontalStep < this.touch.horizontalStep) {
       this.movePiece(-1);
       this.touch.horizontalStep--;
     }
-
     while (verticalStep > this.touch.verticalStep) {
       this.softDrop();
       this.touch.verticalStep++;
@@ -318,12 +294,10 @@ class ThemeBlocksGame {
 
   handleTouchEnd(event) {
     if (this.state.paused || this.state.gameOver) return;
-
     const touch = event.changedTouches[0];
     const dx = touch.clientX - this.touch.startX;
     const dy = touch.clientY - this.touch.startY;
     const elapsed = Date.now() - this.touch.startTime;
-
     const absDx = Math.abs(dx);
     const absDy = Math.abs(dy);
 
@@ -331,12 +305,10 @@ class ThemeBlocksGame {
       this.rotatePiece();
       return;
     }
-
     if (dy < -36 && absDy > absDx) {
       this.rotatePiece();
       return;
     }
-
     if (dy > CONFIG.hardDropDistance && absDy > absDx) {
       this.hardDrop();
     }
@@ -345,20 +317,18 @@ class ThemeBlocksGame {
   loop(time = 0) {
     const deltaTime = time - this.state.lastTime;
     this.state.lastTime = time;
-
     if (!this.state.paused && !this.state.gameOver) {
       this.state.dropCounter += deltaTime;
-      if (this.state.dropCounter > this.state.dropInterval) {
-        this.softDrop();
-      }
+      if (this.state.dropCounter > this.state.dropInterval) this.softDrop();
     }
-
     this.render();
     requestAnimationFrame(this.loop.bind(this));
   }
 
   restart() {
+    const savedSpeed = this.state.speedSetting;
     this.state.reset();
+    this.applySpeedSetting(savedSpeed);
     this.updateHud();
     this.render();
   }
@@ -371,16 +341,12 @@ class ThemeBlocksGame {
 
   movePiece(direction) {
     if (this.state.paused || this.state.gameOver) return;
-
     this.state.currentPiece.x += direction;
-    if (collides(this.state.board, this.state.currentPiece)) {
-      this.state.currentPiece.x -= direction;
-    }
+    if (collides(this.state.board, this.state.currentPiece)) this.state.currentPiece.x -= direction;
   }
 
   rotatePiece() {
     if (this.state.paused || this.state.gameOver) return;
-
     const originalMatrix = this.state.currentPiece.matrix;
     const originalX = this.state.currentPiece.x;
     const rotated = rotateMatrix(originalMatrix);
@@ -389,32 +355,25 @@ class ThemeBlocksGame {
     for (const kick of kicks) {
       this.state.currentPiece.matrix = rotated;
       this.state.currentPiece.x = originalX + kick;
-
-      if (!collides(this.state.board, this.state.currentPiece)) {
-        return;
-      }
+      if (!collides(this.state.board, this.state.currentPiece)) return;
     }
-
     this.state.currentPiece.matrix = originalMatrix;
     this.state.currentPiece.x = originalX;
   }
 
   softDrop() {
     if (this.state.paused || this.state.gameOver) return;
-
     this.state.currentPiece.y++;
     if (collides(this.state.board, this.state.currentPiece)) {
       this.state.currentPiece.y--;
       this.lockPiece();
       return;
     }
-
     this.state.dropCounter = 0;
   }
 
   hardDrop() {
     if (this.state.paused || this.state.gameOver) return;
-
     const ghost = this.getGhostPiece();
     this.state.currentPiece.y = ghost.y;
     this.lockPiece();
@@ -431,10 +390,7 @@ class ThemeBlocksGame {
   spawnNextPiece() {
     this.state.currentPiece = createPiece(this.state.nextPiece.type);
     this.state.nextPiece = createRandomPiece();
-
-    if (collides(this.state.board, this.state.currentPiece)) {
-      this.state.gameOver = true;
-    }
+    if (collides(this.state.board, this.state.currentPiece)) this.state.gameOver = true;
   }
 
   getGhostPiece() {
@@ -444,12 +400,8 @@ class ThemeBlocksGame {
       x: this.state.currentPiece.x,
       y: this.state.currentPiece.y
     };
-
-    while (!collides(this.state.board, ghost)) {
-      ghost.y++;
-    }
+    while (!collides(this.state.board, ghost)) ghost.y++;
     ghost.y--;
-
     return ghost;
   }
 
@@ -479,7 +431,6 @@ class ThemeBlocksGame {
     const style = getComputedStyle(document.body);
     const boardBg = style.getPropertyValue("--board-bg").trim() || "#fff4fb";
     const gridColor = style.getPropertyValue("--grid").trim() || "#f1d9eb";
-
     this.ctx.fillStyle = boardBg;
     this.ctx.fillRect(0, 0, CONFIG.cols, CONFIG.rows);
 
@@ -501,16 +452,11 @@ class ThemeBlocksGame {
     for (let y = 0; y < piece.matrix.length; y++) {
       for (let x = 0; x < piece.matrix[y].length; x++) {
         if (!piece.matrix[y][x]) continue;
-
         const drawX = piece.x + x;
         const drawY = piece.y + y;
         const color = this.pieceColor(piece.type);
-
-        if (ghost) {
-          this.drawGhostCell(drawX, drawY, color);
-        } else {
-          this.drawCell(drawX, drawY, color, "#ffffff");
-        }
+        if (ghost) this.drawGhostCell(drawX, drawY, color);
+        else this.drawCell(drawX, drawY, color, "#ffffff");
       }
     }
   }
@@ -524,7 +470,7 @@ class ThemeBlocksGame {
     this.nextCtx.fillRect(0, 0, this.nextCanvas.width, this.nextCanvas.height);
 
     const matrix = this.state.nextPiece.matrix;
-    const previewSize = 24;
+    const previewSize = 28;
     const width = matrix[0].length * previewSize;
     const height = matrix.length * previewSize;
     const offsetX = (this.nextCanvas.width - width) / 2;
@@ -545,16 +491,13 @@ class ThemeBlocksGame {
   renderOverlay(title, message) {
     this.ctx.save();
     this.ctx.setTransform(1, 0, 0, 1, 0, 0);
-
     this.ctx.fillStyle = "rgba(255, 255, 255, 0.72)";
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-
     this.ctx.fillStyle = "#35507d";
     this.ctx.textAlign = "center";
-    this.ctx.font = "bold 30px Arial";
+    this.ctx.font = "bold 32px Arial";
     this.ctx.fillText(title, this.canvas.width / 2, this.canvas.height / 2 - 10);
-
-    this.ctx.font = "18px Arial";
+    this.ctx.font = "20px Arial";
     this.ctx.fillText(message, this.canvas.width / 2, this.canvas.height / 2 + 28);
     this.ctx.restore();
   }
@@ -567,7 +510,6 @@ class ThemeBlocksGame {
     if (this.state.paused && !this.state.gameOver) {
       this.renderOverlay("잠깐 쉬는 시간", "다시 하기 버튼을 눌러보자!");
     }
-
     if (this.state.gameOver) {
       this.renderOverlay("놀이 끝!", "다시 시작하고 한 번 더 도전!");
     }
@@ -581,7 +523,6 @@ function bindPress(element, handler, repeat = false) {
   const start = (event) => {
     event.preventDefault();
     handler();
-
     if (repeat) {
       timeoutId = setTimeout(() => {
         intervalId = setInterval(handler, 100);

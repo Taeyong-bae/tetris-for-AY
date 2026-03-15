@@ -67,7 +67,7 @@ body {
 }
 
 .app {
-  max-width: 1080px;
+  max-width: 1220px;
   margin: 0 auto;
 }
 
@@ -102,24 +102,27 @@ body {
   margin-bottom: 16px;
 }
 
-.theme-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 16px;
+.toolbar-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
 }
 
-.theme-row h2 {
+.toolbar-block h2 {
   margin: 0 0 6px;
 }
 
 .theme-help {
-  margin: 0;
+  margin: 0 0 10px;
   font-size: 14px;
 }
 
+.theme-select,
+.speed-slider {
+  width: 100%;
+}
+
 .theme-select {
-  min-width: 150px;
   padding: 12px 14px;
   border-radius: 14px;
   border: 2px solid var(--soft-border);
@@ -128,9 +131,21 @@ body {
   font-size: 16px;
 }
 
+.speed-slider {
+  accent-color: var(--primary);
+}
+
+.speed-row {
+  margin-top: 8px;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 14px;
+}
+
 .layout {
   display: grid;
-  grid-template-columns: minmax(300px, 340px) 1fr;
+  grid-template-columns: minmax(360px, 420px) 1fr;
   gap: 16px;
   align-items: start;
 }
@@ -142,8 +157,8 @@ body {
 }
 
 #gameCanvas {
-  width: min(78vw, 300px);
-  height: min(156vw, 600px);
+  width: min(84vw, 360px);
+  height: min(168vw, 720px);
   border-radius: 18px;
   background: var(--board-bg);
   border: 4px solid var(--board-border);
@@ -194,8 +209,8 @@ h2 {
 .preview-card canvas {
   display: block;
   margin: 0 auto;
-  width: 120px;
-  height: 120px;
+  width: 140px;
+  height: 140px;
   background: var(--preview-bg);
   border-radius: 18px;
   border: 2px solid var(--preview-border);
@@ -271,7 +286,7 @@ h2 {
   background: #ffe8a3;
 }
 
-@media (max-width: 860px) {
+@media (max-width: 980px) {
   .layout {
     grid-template-columns: 1fr;
   }
@@ -281,14 +296,18 @@ h2 {
   }
 }
 
-@media (max-width: 520px) {
+@media (max-width: 620px) {
   body {
     padding: 12px;
   }
 
   .header,
-  .theme-row {
-    flex-direction: column;
+  .toolbar-grid {
+    grid-template-columns: 1fr;
+    display: grid;
+  }
+
+  .header {
     align-items: stretch;
   }
 
@@ -305,7 +324,13 @@ h2 {
     font-size: 22px;
   }
 
-  .theme-select {
-    width: 100%;
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  #gameCanvas {
+    width: min(92vw, 360px);
+    height: auto;
+    aspect-ratio: 1 / 2;
   }
 }

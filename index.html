@@ -7,7 +7,7 @@
   <title>테마 블록 놀이터</title>
   <link rel="stylesheet" href="style.css" />
 </head>
-<body>
+<body class="theme-candy">
   <main class="app">
     <header class="header card">
       <div>
@@ -18,22 +18,33 @@
     </header>
 
     <section class="card theme-card">
-      <div class="theme-row">
-        <div>
+      <div class="toolbar-grid">
+        <div class="toolbar-block">
           <h2>테마 고르기</h2>
           <p class="theme-help">좋아하는 그림 분위기를 골라보자!</p>
+          <select id="themeSelect" class="theme-select" aria-label="테마 선택">
+            <option value="candy">캔디</option>
+            <option value="fruit">과일</option>
+            <option value="ocean">바다친구</option>
+          </select>
         </div>
-        <select id="themeSelect" class="theme-select" aria-label="테마 선택">
-          <option value="candy">캔디</option>
-          <option value="fruit">과일</option>
-          <option value="ocean">바다친구</option>
-        </select>
+
+        <div class="toolbar-block">
+          <h2>속도 조절</h2>
+          <p class="theme-help">내려오는 빠르기를 바꿔보자!</p>
+          <input id="speedSlider" class="speed-slider" type="range" min="1" max="5" step="1" value="3" />
+          <div class="speed-row">
+            <span>천천히</span>
+            <strong id="speedLabel">보통</strong>
+            <span>빠르게</span>
+          </div>
+        </div>
       </div>
     </section>
 
     <section class="layout">
       <div class="board-panel card">
-        <canvas id="gameCanvas" width="300" height="600" aria-label="게임 보드"></canvas>
+        <canvas id="gameCanvas" width="360" height="720" aria-label="게임 보드"></canvas>
       </div>
 
       <aside class="side-panel">
@@ -57,7 +68,7 @@
 
         <section class="card preview-card">
           <h2>다음 블록</h2>
-          <canvas id="nextCanvas" width="120" height="120" aria-label="다음 블록"></canvas>
+          <canvas id="nextCanvas" width="140" height="140" aria-label="다음 블록"></canvas>
         </section>
 
         <section class="card help-card">
